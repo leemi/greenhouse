@@ -9,7 +9,6 @@
 DHT_Unified dht(DHTPIN, DHTTYPE);
 
 // DHT Vars
-int showTemp = true; 
 float tempVal = 0;
 float humidityVal = 0;
 
@@ -22,7 +21,9 @@ int clockPin = 4;
 int dataPin = 2;
 int digitPin[] = {10, 11, 12, 13};
 
-int displayFreq = 10000; // Frequency to change between C and RH
+int displayFreq = 5000; // Frequency to change between C and RH
+int showTemp = true; 
+unsigned long lastSwitched = 0;
 
 void setup() {
   Serial.begin(9600);
@@ -42,12 +43,31 @@ void setup() {
   sensor_t sensor;
   dht.temperature().getSensor(&sensor);
   readDelayMs = sensor.min_delay / 1000;
+
+  // Initial read
+  updateDHT();
 }
 
 void loop() {
 
-  showTemp = millis() % displayFreq * 2 > displayFreq;
+  if (millis() - lastSwitched > displayFreq) {
+    // updateDHT takes about 271ms to run,
+    // so we hide the lag in the transition
+    // between C and H.
+    updateDHT();
+    showTemp = !showTemp;
+    lastSwitched = millis();
+  }
+  
+  if (showTemp) {
+    writeVal(tempVal, 'C');
+  } else {
+    writeVal(humidityVal, 'H');
+  }
+  
+}
 
+void updateDHT() {
   if (millis() - lastRead > readDelayMs) {
     sensors_event_t event;  
 
@@ -65,12 +85,6 @@ void loop() {
     
     lastRead = millis();
   }
-
-  if (showTemp) {
-    writeVal(tempVal, 'C');
-  } else {
-    writeVal(humidityVal, 'H');
-  }
 }
 
 void writeDigit(int val) {
@@ -81,7 +95,7 @@ void writeDigit(int val) {
 
 void writeVal(float val, char type) {
 
-    const int DELAY = 3;
+    const int DELAY = 6;
 
     writeDigit(int(val / 10) % 10);
     digitalWrite(digitPin[0], LOW);
