@@ -11,6 +11,7 @@ DHT_Unified dht(DHTPIN, DHTTYPE);
 int latchPin = 3;
 int clockPin = 4;
 int dataPin = 2;
+int digitPin[] = {10, 11, 12, 13};
 
 int displayFreq = 10000; // Frequency to change between C and RH
 
@@ -29,15 +30,10 @@ void setup() {
   pinMode(clockPin, OUTPUT);
   pinMode(dataPin, OUTPUT);
 
-  pinMode(10, OUTPUT);
-  pinMode(11, OUTPUT);
-  pinMode(12, OUTPUT);
-  pinMode(13, OUTPUT);
-
-  digitalWrite(10, HIGH);
-  digitalWrite(11, HIGH);
-  digitalWrite(12, HIGH);
-  digitalWrite(13, HIGH);
+  for (int i = 0; i < 4; i++) {
+    pinMode(digitPin[i], OUTPUT);
+    digitalWrite(digitPin[i], HIGH);
+  }
 
   digitalWrite(latchPin, LOW);
 
@@ -87,25 +83,25 @@ void writeDigit(int val) {
 }
 
 void writeVal(float val, char type) {
-    digitalWrite(10, LOW);
+    digitalWrite(digitPin[0], LOW);
     writeDigit(int(val / 10) % 10);
     delay(4);
-    digitalWrite(10, HIGH);
+    digitalWrite(digitPin[0], HIGH);
 
-    digitalWrite(11, LOW);
+    digitalWrite(digitPin[1], LOW);
     writeDigit(int(val) % 10);
     delay(4);
-    digitalWrite(11, HIGH);
+    digitalWrite(digitPin[1], HIGH);
 
-    digitalWrite(12, LOW);
+    digitalWrite(digitPin[2], LOW);
     writeDigit(int(val * 10) % 10);
     delay(4);
-    digitalWrite(12, HIGH);
+    digitalWrite(digitPin[2], HIGH);
 
-    digitalWrite(13, LOW);
+    digitalWrite(digitPin[3], LOW);
     writeDigit(type == 'C' ? 10 : 11 );
     delay(4);
-    digitalWrite(13, HIGH);
+    digitalWrite(digitPin[3], HIGH);
 }
 
 byte myfnNumToBits(int someNumber) {
