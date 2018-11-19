@@ -2,6 +2,8 @@
 #include <DHT.h>
 #include <DHT_U.h>
 
+#include <avr/power.h>
+
 // DHT Setup
 #define DHTPIN            8
 #define DHTTYPE           DHT22
@@ -16,17 +18,18 @@ int readDelayMs = 1000;
 unsigned long lastRead = 0;
 
 // Display Vars
-int latchPin = 3;
-int clockPin = 4;
-int dataPin = 2;
+#define latchPin 3
+#define clockPin 4
+#define dataPin 2
 int digitPin[] = {10, 11, 12, 13};
 
-int displayFreq = 5000; // Frequency to change between C and RH
+#define displayFreq 5000 // Frequency to change between C and RH
 int showTemp = true; 
 unsigned long lastSwitched = 0;
 
 void setup() {
-  Serial.begin(9600);
+
+  powerSaving();
 
   pinMode(latchPin, OUTPUT);
   pinMode(clockPin, OUTPUT);
@@ -116,6 +119,19 @@ void writeVal(float val, char type) {
     digitalWrite(digitPin[3], LOW);
     delay(DELAY);
     digitalWrite(digitPin[3], HIGH);
+}
+
+void powerSaving() {
+  // disable ADC
+  ADCSRA = 0;  
+
+  power_adc_disable(); // ADC converter
+  power_spi_disable(); // SPI
+  power_usart0_disable();// Serial (USART) 
+  //  power_timer0_disable();// Timer 0 // This would disable millis()
+  power_timer1_disable();// Timer 1
+  power_timer2_disable();// Timer 2
+  power_twi_disable(); // TWI (I2C)
 }
 
 byte myfnNumToBits(int someNumber) {
