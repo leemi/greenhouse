@@ -2,18 +2,11 @@
 #include <DHT.h>
 #include <DHT_U.h>
 
+// DHT Setup
 #define DHTPIN            8
 #define DHTTYPE           DHT22
 
 DHT_Unified dht(DHTPIN, DHTTYPE);
-
-// Display Vars
-int latchPin = 3;
-int clockPin = 4;
-int dataPin = 2;
-int digitPin[] = {10, 11, 12, 13};
-
-int displayFreq = 10000; // Frequency to change between C and RH
 
 // DHT Vars
 int showTemp = true; 
@@ -22,6 +15,14 @@ float humidityVal = 0;
 
 int readDelayMs = 1000;
 unsigned long lastRead = 0;
+
+// Display Vars
+int latchPin = 3;
+int clockPin = 4;
+int dataPin = 2;
+int digitPin[] = {10, 11, 12, 13};
+
+int displayFreq = 10000; // Frequency to change between C and RH
 
 void setup() {
   Serial.begin(9600);
@@ -53,15 +54,11 @@ void loop() {
     dht.temperature().getEvent(&event);
     if (!isnan(event.temperature)) {
       tempVal = event.temperature;
-      Serial.print("Temp: ");
-      Serial.println(event.temperature);
     }
 
     dht.humidity().getEvent(&event);
     if (!isnan(event.relative_humidity)) {
       humidityVal = event.relative_humidity;
-      Serial.print("RH: ");
-      Serial.println(event.relative_humidity);
       // 4 Digit Display
       if (humidityVal >= 100) { humidityVal = 99.9; }
     } 
@@ -83,24 +80,27 @@ void writeDigit(int val) {
 }
 
 void writeVal(float val, char type) {
-    digitalWrite(digitPin[0], LOW);
+
+    const int DELAY = 3;
+
     writeDigit(int(val / 10) % 10);
-    delay(4);
+    digitalWrite(digitPin[0], LOW);
+    delay(DELAY);
     digitalWrite(digitPin[0], HIGH);
 
-    digitalWrite(digitPin[1], LOW);
     writeDigit(int(val) % 10);
-    delay(4);
+    digitalWrite(digitPin[1], LOW);
+    delay(DELAY);
     digitalWrite(digitPin[1], HIGH);
 
-    digitalWrite(digitPin[2], LOW);
     writeDigit(int(val * 10) % 10);
-    delay(4);
+    digitalWrite(digitPin[2], LOW);
+    delay(DELAY);
     digitalWrite(digitPin[2], HIGH);
 
-    digitalWrite(digitPin[3], LOW);
     writeDigit(type == 'C' ? 10 : 11 );
-    delay(4);
+    digitalWrite(digitPin[3], LOW);
+    delay(DELAY);
     digitalWrite(digitPin[3], HIGH);
 }
 
