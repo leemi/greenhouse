@@ -17,13 +17,16 @@ const SerialPort = require('serialport');
 const Readline = require('@serialport/parser-readline');
 const readline = require('readline');
 const schedule = require('node-schedule');
-const SunCalc = require('suncalc');
-const delay = require('delay');
 
-const LAT_LNG = [43.653225, -79.383186];
+// const SunCalc = require('suncalc');
+// const LAT_LNG = [43.653225, -79.383186];
 
 const port = new SerialPort("COM5", {
   baudRate: 9600,
+  dataBits: 8,
+  hupcl: false, // Prevents arduino from restarting
+  stopBits: 1,
+  parity: "none"
 });
 const parser = port.pipe(new Readline({ delimiter: '\r\n' }))
 
@@ -53,78 +56,8 @@ let rl = readline.createInterface({
 });
 
 rl.on('line', function(line){
-  if (line === "play") {
-    playDay();
-  } else {
-    console.log('>', line);
-    port.write(line);
-  }
+  console.log('>', line);
+  port.write(line);
 });
-
-function playDay() {
-
-  (async() => {
-
-    let start = new Date().setHours(0, 0, 0, 0);
-    let end = new Date();
-    end.setHours(0, 0, 0, 0);
-    end.setHours(24);
-    let cur = new Date(start);
-
-    const FRAME_DUR = 1000;
-    const ANIMATION_LENGTH = 60000; // 10 s
-    const NUM_FRAMES = ANIMATION_LENGTH / FRAME_DUR;
-    const MS_IN_DAY = 86400000;
-    const STEP_SIZE = MS_IN_DAY / NUM_FRAMES;
-
-    while (cur < end) {
-
-      console.log(cur.toString());
-
-      let pos = SunCalc.getPosition(cur, LAT_LNG[0], LAT_LNG[1]);
-
-      setColorAngle(pos.altitude * 180/Math.PI);
-
-      cur = new Date(cur.getTime() + STEP_SIZE);
-
-      await delay(FRAME_DUR);
-    }
-
-  })();
-
-}
-
-function setColorAngle(angle) {
-  // let color = [0, 0, 0, 0];
-
-  // Nighttime < -18
-  // color = [0, 0, 0, 0];
-  // // Astronomical -15
-  // color = [0, 42, 114, 128];
-  // // Nautical -9
-  // color = [0, 98, 161, 128];
-  // // Civil -3
-  // color = [85, 160, 217, 128];
-  // // Golden 1
-  // color = [233, 180, 47, 192];
-  // // Daytime > 6
-  // color = [255, 255, 255, 255];
-
-  const x = angle;
-  r = 152.3911 + 18.55365*x + 0.5380059*x^2;
-  g = 175.7893 + 8.601756*x + 0.4053063*x^2 + 0.04862254*x^3 + 0.001265863*x^4
-  b = 98.20324 - 51.66196*x - 1.053027*x^2 + 1.369691*x^3 + 0.1382349*x^4 + 0.003815818*x^5;
-  br = 155.8132 + 7.02256*x + 1.361226*x^2 + 0.07769448*x^3;
-
-  r = Math.max(0, Math.min(r, 255));
-  g = Math.max(0, Math.min(g, 255));
-  b = Math.max(0, Math.min(b, 255));
-  br = Math.max(0, Math.min(br, 255));
-
-  console.log(`lights color ${ r } ${ g } ${ b } ${ br }`);
-
-  port.write(`lights color ${ r } ${ g } ${ b }`);
-  port.write(`lights brightness ${ br }`);
-}
 
 setInterval(() => {}, 1 << 30);
