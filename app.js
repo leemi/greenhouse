@@ -21,33 +21,53 @@ const schedule = require('node-schedule');
 // const SunCalc = require('suncalc');
 // const LAT_LNG = [43.653225, -79.383186];
 
+let portTimeoutID = 0;
+const PORT_TIMEOUT = 10000; // 10 seconds
+
 const port = new SerialPort("COM5", {
   baudRate: 9600,
   dataBits: 8,
   hupcl: false, // Prevents arduino from restarting
   stopBits: 1,
-  parity: "none"
+  parity: "none",
+  autoOpen: false
 });
 const parser = port.pipe(new Readline({ delimiter: '\r\n' }))
 
 port.on('error', function(err) {
-  console.log('Error: ', err.message)
+  if (err.message !== "First argument must be an int") {
+    console.log('Error: ', err.message);
+  }
 });
 
 port.on('open', function() {
-  console.log('Connection Opened');
+  console.log('Connection opened');
+});
+
+port.on('close', function() {
+  console.log('Connection closed');
 });
 
 parser.on('data', function(data) {
   console.log('<', data);
 });
 
+function write(s) {
+  if (!port.isOpen) {
+    port.open();
+  }
+  port.write(s);
+
+  clearTimeout(portTimeoutID);
+  portTimeoutID = setTimeout(() => { port.drain(); port.close(); }, PORT_TIMEOUT)
+}
+
 schedule.scheduleJob('0 8 * * *', function() {
-  port.write('lights on');
+  write('lights on');
 });
 
 schedule.scheduleJob('0 0 * * *', function() {
-  port.write('lights off');
+  write('lights off');
 });
 
 let rl = readline.createInterface({
@@ -57,7 +77,7 @@ let rl = readline.createInterface({
 
 rl.on('line', function(line){
   console.log('>', line);
-  port.write(line);
+  write(line);
 });
 
 setInterval(() => {}, 1 << 30);
